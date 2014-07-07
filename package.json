@@ -9,6 +9,10 @@
   "dependencies": {
     "get-set": "git://github.com/vectorsize/get-set.git#master"
   },
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/Ircam-RnD/brush-vis"
+  },
   "devDependencies": {
     "module-boilerplate": "git://github.com/Ircam-RnD/module-boilerplate.git#master",
     "browserify": "~4.1.2",

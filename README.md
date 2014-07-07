@@ -1,12 +1,12 @@
-## Breakpoint function editor
+## Selection tool
 
-> Breakpoint editor component
+> Selection layer based on the d3 generic brush component
 
-Use this module to edit breakpoints over a shared timeline.  
+Use this module to select '.selectable' items in a timeline.  
 The module relies on a [timeline](https://github.com/Ircam-RnD/timeLine) instance.
 ###Demo
 
-A woring demo for this module can be found [here](https://ircam-rnd.github.io/breakpoint-edit)
+A woring demo for this module can be found [here](https://ircam-rnd.github.io/brush-vis)
 ### Usage
 
 #### Data
@@ -84,7 +84,7 @@ seg.data(collection.models);
 graph.update();
 ```
 
-#### Adding items
+<h3 id="adding">Adding items</h3>
 
 ```js
 // add one item to the collection
