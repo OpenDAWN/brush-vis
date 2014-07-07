@@ -1,12 +1,8 @@
 ##Demo
 
-With a <code>brush</code> layer you can select multiple elements by dragging your mouse over a region.
+With a `brush` layer you can select multiple elements by dragging your mouse over a region.
 
-You can <a class="keep-selection delete" name="delete">delete selected items</a> (<a href="#deleting">see below</a>).  
-_Please not that the element that will call the delete action must have the css class of `.keep-selection` in order to keep the selection active_. 
-
-<a class="keep-selection add" name="add">Adding elemts</a> is also easy (<a href="#deleting">see below</a>).  
-_Note that this only adds one hardcoded segment to the timeline_.
+You can <a class="keep-selection delete" name="delete">delete selected items</a> or <a class="keep-selection add" name="add">adding new ones</a>.
 
 <div class="soom keep-selection"></div>
 <div class="timeline"></div>
@@ -16,7 +12,7 @@ _Note that this only adds one hardcoded segment to the timeline_.
 <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
 <script src="//rawgit.com/ircam-rnd/timeLine/master/timeLine.min.js"></script>
 <script src="//rawgit.com/ircam-rnd/breakpoint-edit/master/build/breakpoint-edit.js"></script>
-<script src="//rawgit.com/ircam-rnd/breakpoint-edit/master/build/brush-vis.js"></script>
+<script src="//rawgit.com/ircam-rnd/brush-vis/master/build/brush-vis.js"></script>
 <script src="js/zoomer.min.js"></script>
 <link rel="stylesheet" href="css/style.css">
 <script>
@@ -102,7 +98,24 @@ _Note that this only adds one hardcoded segment to the timeline_.
       .interpolate('linear')
       .opacity(1);
 
+    var brush = brushVis().name('bruce');
+    // Brush interaction
+    brush.on('brush', function(extent) {
+      // loop trhough layers and for the selectable ones
+      // perform the selection
+      for (var ly in graph.layers) {
+        var layer = graph.layers[ly];
+        if(layer.brushItem) layer.brushItem(extent);
+      }
+    })
+    .on('brushend', function(){
+      this.clear();
+    });
+
+
     // we add layers
+
+    graph.layer(brush);
     graph.layer(bkp);
   
     // Zoom behaviour/layer
