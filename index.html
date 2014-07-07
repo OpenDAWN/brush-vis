@@ -1,0 +1,271 @@
+<!doctype html>
+<html class="no-js" lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>brush-vis</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Slab:400,700|Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+  </head>
+  <body>
+
+  <header>
+    <nav>
+      <ul>
+        <li><a class="icon-github" href="https://github.com/Ircam-RnD/brush-vis">Source on GitHub</a></li>
+        <li class="updated"><em>Last updated: 7/July/2014</em></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <hr>
+
+  <section>
+    <h2 id="selection-tool">Selection tool</h2>
+<blockquote>
+<p>Selection layer based on the d3 generic brush component</p>
+</blockquote>
+<p>Use this module to select <code>.selectable</code> items in a timeline.<br>The module relies on a <a href="https://github.com/Ircam-RnD/timeLine">timeline</a> instance.</p>
+
+    <h3 id="demo">Demo</h3>
+<p>With a <code>brush</code> layer you can select multiple elements by dragging your mouse over a region.</p>
+<p>You can <a class="keep-selection delete" name="delete">delete selected items</a> or <a class="keep-selection add" name="add">adding new ones</a>.</p>
+<div class="soom keep-selection"></div>
+<div class="timeline"></div>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.8/d3.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.backbone.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+<script src="//rawgit.com/ircam-rnd/timeLine/master/timeLine.min.js"></script>
+<script src="//rawgit.com/ircam-rnd/breakpoint-edit/master/build/breakpoint-edit.js"></script>
+<script src="//rawgit.com/ircam-rnd/brush-vis/master/build/brush-vis.js"></script>
+<script src="js/zoomer.min.js"></script>
+<link rel="stylesheet" href="css/style.css">
+<script>
+  var radius = 5;
+  var color = 'lightblue';
+  var data = [
+    {
+      cx: 43,
+      cy: 67,
+      r: radius,
+      color: 'green'
+    },
+    {
+      cx: 50,
+      cy: 250,
+      r: radius,
+      // color: color
+    },
+    {
+      cx: 90,
+      cy: 170,
+      r: radius,
+      // color: color
+    },
+    {
+      cx: 200,
+      cy: 250,
+      r: radius,
+      // color: color
+    },
+    {
+      cx: 300,
+      cy: 320,
+      r: radius,
+      // color: color
+    },
+    {
+      cx: 340,
+      cy: 150,
+      r: radius,
+      // color: color
+    }
+  ];
+
+  var collection = new Backbone.Collection(data);
+
+  var bkpView = {
+    sortIndex: function(d) {
+      return +d.get('cx');
+    },
+    cx: function(d, v) {
+      if(!v) return +d.get('cx') || 0;
+      d.set('cx', (+v));
+    },
+    cy: function(d, v) {
+      if(!v) return +d.get('cy') || 1;
+      d.set('cy', (+v));
+    },
+    r: function(d, v) {
+      if(!v) return +d.get('r') || 5;
+      d.set('r', (+v));
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+
+    // Timeline
+    // --------
+    var graph = timeLine()
+      .width(750)
+      .height(150)
+      .xDomain([0, 350])
+      .yDomain([0, 350]);
+
+    // breakpoints layer
+    // ----------------
+    var bkp = breakpointEdit()
+      .data(collection.models)
+      .dataView(bkpView)
+      .name('breakpoints')
+      .lineColor(color)
+      .color('red')
+      .interpolate('linear')
+      .opacity(1);
+
+    var brush = brushVis().name('bruce');
+    // Brush interaction
+    brush.on('brush', function(extent) {
+      // loop trhough layers and for the selectable ones
+      // perform the selection
+      for (var ly in graph.layers) {
+        var layer = graph.layers[ly];
+        if(layer.brushItem) layer.brushItem(extent);
+      }
+    })
+    .on('brushend', function(){
+      this.clear();
+    });
+
+
+    // we add layers
+
+    graph.layer(brush);
+    graph.layer(bkp);
+
+    // Zoom behaviour/layer
+    // ---------------------
+    var zoomr = zoomer()
+      .graph(graph)
+      .on('mousemove', function(evt) {
+        // sends evt {anchor: zx, factor: zFactor, delta: {x: deltaX, y: deltaY}}
+        graph.xZoom(evt);
+        d3.select('.xaxis').call(xAxis); // redraw axis
+      })
+      .on('mouseup', function(evt) {
+        graph.xZoomSet();
+        xAxis.scale(graph.xScale);
+        d3.select('.xaxis').call(xAxis); // redraw axis
+      });
+
+    d3.select('.soom')
+      .append('svg')
+      .attr('width', 800)
+      .attr('height', 30)
+      .call(zoomr.draw);
+
+    // draw
+    // -----
+    // we pass in the drawing method from our timeline object
+    d3.select('.timeline').call(graph.draw);
+
+    // axis for the zoom
+    // ------------------
+    var xAxis = d3.svg.axis()
+      .scale(graph.xScale)
+      .tickSize(1)
+      // .tickFormat(function(d){
+      //   var date = new Date(d);
+      //   var format = d3.time.format("%M:%S");
+      //   return format(date);
+      // });
+
+    d3.select('.soom svg')
+      .append('g')
+      .attr('class', 'xaxis')
+      .attr("transform", "translate(0,0)")
+      .attr('fill', '#555').call(xAxis);
+
+
+    // Adding / deletting
+    // ------------------
+
+    function deleteSelected() {
+      // find selected segments and delete each of them from the collection
+      var selected = d3.selectAll('.layout .selected');
+      selected.each(function(item){
+        collection.remove(item);
+      });
+      // pass again the modified data and call update
+      bkp.data(collection.models);
+      graph.update();
+    }
+
+    function addItem() {
+      // add one segment to the collection
+      collection.add({
+        cx: 250,
+        cy: 100,
+        r: radius,
+        color: 'blue'
+      });
+
+      // console.dir(collection.models);
+      // pass again the modified data and call update
+      bkp.data(collection.models);
+      graph.update();
+    }
+
+    document.querySelector('.add').addEventListener('click', addItem);
+    document.querySelector('.delete').addEventListener('click', deleteSelected);
+
+  });
+</script>
+    <h3 id="usage">Usage</h3>
+<h4 id="creating-a-brush-layer">Creating a brush layer</h4>
+<pre><code class="lang-js">var brush = brushVis().name(&#39;bruce&#39;);
+</code></pre>
+<h4 id="handling-the-brush-events">Handling the brush events</h4>
+<pre><code class="lang-js">// Brush interaction
+brush.on(&#39;brush&#39;, function(extent) {
+  // we loop trhough layers
+  for (var ly in graph.layers) {
+    var layer = graph.layers[ly];
+    // call the layer&#39;s brushItem implementation and pass it in the extent
+    if(layer.brushItem) layer.brushItem(extent);
+  }
+})
+.on(&#39;brushend&#39;, function(){
+  // on release we clear the brush region
+  this.clear();
+});
+</code></pre>
+<h4 id="creating-the-timeline-layout">Creating the timeLine layout</h4>
+<pre><code class="lang-js">var graph = timeLine()
+  .width(750)
+  .height(150);
+</code></pre>
+<h4 id="adding-the-layer-and-drawing-the-graph">Adding the layer and drawing the graph</h4>
+<pre><code class="lang-js">// add the layer
+graph.layer(brush);
+// Draw the layer
+d3.select(&#39;.timeline&#39;).call(graph.draw);
+</code></pre>
+
+    <h3 id="status">Status</h3>
+<p>This library is under heavy development and subject to change.<br>Evert new API breaking change we will be adding snapshots to the repository so you can always fetch a working copy.</p>
+<p>For an in depth  explanation on the philosophy and usage of this library please refer to <a href="http://wave.ircam.fr/publications/visual-tools/">this blog post</a>.</p>
+
+  </section>
+
+  <hr>
+
+  <footer>
+    <p>This code is part of the <a href="http://wave.ircam.fr">WAVE project</a>,<br>funded by ANR (The French National Research Agency),<br><em>ContInt</em> program,<br>2012-2015.</p>
+
+  </footer>
+  <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
